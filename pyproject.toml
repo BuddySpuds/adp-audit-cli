@@ -1,0 +1,49 @@
+[project]
+name = "adp-audit-cli"
+version = "0.1.0"
+description = "Audit a domain for AI Discovery Protocol (ADP) compliance — built by Citability.ai"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Citability", email = "hello@citability.ai" }]
+keywords = ["adp", "ai-discovery-protocol", "llms-txt", "ai", "seo", "geo", "ai-visibility", "citability"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.27.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+]
+
+[project.urls]
+Homepage = "https://citability.ai"
+Repository = "https://github.com/BuddySpuds/adp-audit-cli"
+"Bug Tracker" = "https://github.com/BuddySpuds/adp-audit-cli/issues"
+"AI Visibility Scanner" = "https://citability.ai/scan"
+
+[project.scripts]
+adp-audit = "adp_audit.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/adp_audit"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

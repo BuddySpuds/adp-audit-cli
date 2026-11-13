@@ -1,0 +1,20 @@
+name: Registry sync
+
+# The bundled registry is a copy of the one in the specification repository.
+# This fails when the two differ, so the tool cannot drift from the spec.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python scripts/sync_registry.py --check

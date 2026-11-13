@@ -1,69 +1,131 @@
-"""CLI for adp-audit."""
+"""Command line for adp-audit."""
+
+import argparse
 import asyncio
+import json
 import sys
 
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
 
-from adp_audit import audit_domain
+from adp_audit import registry
+from adp_audit.audit import AuditResult, audit_domain
+
+LEVEL_STYLE = {"met": "green", "partial": "yellow", "not met": "red"}
 
 
-def main():
-    """CLI entry point."""
-    console = Console()
+def _mark(value: bool) -> str:
+    return "[green]yes[/green]" if value else "[red]no[/red]"
 
-    if len(sys.argv) < 2:
-        console.print("[bold]ADP Audit CLI[/bold] — audit domains for AI Discovery Protocol compliance\n")
-        console.print("[dim]Usage:[/dim] adp-audit <domain>")
-        console.print("[dim]Example:[/dim] adp-audit citability.ai\n")
-        console.print("Powered by Citability.ai — https://citability.ai")
-        sys.exit(1)
 
-    domain = sys.argv[1]
-    console.print(f"\n[cyan]Auditing[/cyan] [bold]{domain}[/bold]...\n")
-
-    result = asyncio.run(audit_domain(domain))
-
-    # Score header
-    score_color = "green" if result.score >= 80 else "yellow" if result.score >= 50 else "red"
+def render(result: AuditResult, console: Console, verbose: bool) -> None:
+    style = LEVEL_STYLE[result.level_1]
     console.print(
-        Panel(
-            f"[bold {score_color}]{result.score}/100[/bold {score_color}]  •  "
-            f"{result.found_count}/{result.total_count} endpoints found",
-            title=f"ADP Score: {result.domain}",
-            expand=False,
-        )
+        f"\n[bold]{result.domain}[/bold]  ADP {result.registry_version}\n"
+        f"Level 1 (page copies, required): [bold {style}]{result.level_1}[/bold {style}]"
+        f"  {result.pages_conforming} of {len(result.pages)} sampled pages conform\n"
+    )
+    console.print(
+        f"robots.txt: {_mark(result.robots_found)}   "
+        f"sitemap: {_mark(result.sitemap_found)}   "
+        f"URLs in sitemap: {result.sitemap_urls}   "
+        f"markdown copies in sitemap: {result.markdown_urls_in_sitemap}\n"
     )
 
-    # Category breakdown
-    cat_table = Table(title="By Category", show_header=True)
-    cat_table.add_column("Category")
-    cat_table.add_column("Found", justify="right")
-    cat_table.add_column("Score", justify="right")
-    for cat, data in result.by_category.items():
-        pct = int((data["weight_earned"] / data["weight_total"]) * 100) if data["weight_total"] else 0
-        cat_table.add_row(
-            cat.replace("_", " ").title(),
-            f"{data['found']}/{data['total']}",
-            f"{pct}%",
+    table = Table(title="Level 1: sampled pages")
+    table.add_column("Page", overflow="fold")
+    table.add_column("Copy")
+    table.add_column("Body link")
+    table.add_column("Crawlable")
+    table.add_column("In sitemap (rec.)")
+    table.add_column("Note", overflow="fold")
+    for page in result.pages:
+        table.add_row(
+            page.url,
+            _mark(page.markdown_copy),
+            _mark(page.body_link),
+            _mark(page.crawl_allowed),
+            "yes" if page.sitemap_listing else "no",
+            page.note or "",
         )
-    console.print(cat_table)
+    console.print(table)
 
-    # Endpoint details
-    ep_table = Table(title="Endpoint Details", show_header=True)
-    ep_table.add_column("Endpoint")
-    ep_table.add_column("Status", justify="center")
-    ep_table.add_column("Category")
-    for r in result.endpoints:
-        status = "[green]✓[/green]" if r.found else "[red]✗[/red]"
-        ep_table.add_row(r.path, status, r.category.replace("_", " "))
-    console.print(ep_table)
+    names = {entry["level"]: entry["name"] for entry in registry.levels()}
+    optional = Table(title="Optional levels")
+    optional.add_column("Level")
+    optional.add_column("Name")
+    optional.add_column("Served", justify="right")
+    for level, row in sorted(result.optional_levels().items()):
+        optional.add_row(str(level), names[level], f"{row['served']} of {row['total']}")
+    console.print(optional)
 
-    console.print()
-    console.print("[dim]For full AI visibility scoring across 5 pillars, try:[/dim]")
-    console.print("[cyan]https://citability.ai/scan[/cyan]")
-    sys.exit(0 if result.score >= 50 else 1)
+    if verbose:
+        detail = Table(title="Endpoints")
+        detail.add_column("Level")
+        detail.add_column("Path")
+        detail.add_column("Served")
+        detail.add_column("Note")
+        for endpoint in result.endpoints:
+            note = f"from {endpoint.served_from}" if endpoint.served_from else ""
+            detail.add_row(
+                str(endpoint.level), endpoint.path, _mark(endpoint.found), note
+            )
+        console.print(detail)
+
+    console.print(
+        "\n[dim]Only Level 1 is required. The pages are a sample: pass --page to "
+        "audit specific pages. Optional levels are not scored; measured request "
+        "counts for each are in the specification's RESULTS.md.[/dim]\n"
+    )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        prog="adp-audit",
+        description="Audit a site against the AI Discovery Protocol registry.",
+    )
+    parser.add_argument("domain", help="domain or URL, for example example.com")
+    parser.add_argument(
+        "--page",
+        action="append",
+        default=[],
+        help="audit this page instead of sampling the sitemap (repeatable)",
+    )
+    parser.add_argument(
+        "--sample", type=int, default=5, help="pages to sample from the sitemap"
+    )
+    parser.add_argument(
+        "--sitemap",
+        action="append",
+        default=[],
+        help="also read this sitemap, for example a dedicated sitemap of copies",
+    )
+    parser.add_argument("--json", action="store_true", help="print JSON")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="exit 1 unless every sampled page conforms",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="list every endpoint"
+    )
+    args = parser.parse_args()
+
+    result = asyncio.run(
+        audit_domain(
+            args.domain,
+            sample=args.sample,
+            pages=args.page or None,
+            sitemaps=args.sitemap or None,
+        )
+    )
+    if args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+    else:
+        render(result, Console(), args.verbose)
+
+    passing = {"met"} if args.strict else {"met", "partial"}
+    sys.exit(0 if result.level_1 in passing else 1)
 
 
 if __name__ == "__main__":

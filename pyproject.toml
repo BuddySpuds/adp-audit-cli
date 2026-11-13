@@ -1,11 +1,11 @@
 [project]
 name = "adp-audit-cli"
-version = "0.1.0"
-description = "Audit a domain for AI Discovery Protocol (ADP) compliance — built by Citability.ai"
+version = "0.2.0"
+description = "Audit a site against the AI Discovery Protocol (ADP) registry"
 readme = "README.md"
 license = { text = "MIT" }
-authors = [{ name = "Citability", email = "hello@citability.ai" }]
-keywords = ["adp", "ai-discovery-protocol", "llms-txt", "ai", "seo", "geo", "ai-visibility", "citability"]
+authors = [{ name = "Pressonify.ai" }]
+keywords = ["adp", "ai-discovery-protocol", "llms-txt", "ai", "seo", "geo", "ai-visibility", "markdown"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -29,10 +29,10 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://citability.ai"
+Homepage = "https://github.com/BuddySpuds/AI-Discovery-Protocol"
 Repository = "https://github.com/BuddySpuds/adp-audit-cli"
 "Bug Tracker" = "https://github.com/BuddySpuds/adp-audit-cli/issues"
-"AI Visibility Scanner" = "https://citability.ai/scan"
+"Specification" = "https://github.com/BuddySpuds/AI-Discovery-Protocol"
 
 [project.scripts]
 adp-audit = "adp_audit.cli:main"

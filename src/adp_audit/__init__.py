@@ -1,15 +1,22 @@
-"""
-ADP Audit CLI — audit domains for AI Discovery Protocol compliance.
+"""Audit a site against the AI Discovery Protocol (ADP) registry."""
 
-Built by Citability.ai (https://citability.ai) — AI visibility scoring platform.
-"""
 from adp_audit.audit import (
     AuditResult,
-    Endpoint,
     EndpointResult,
-    ENDPOINTS,
+    PageResult,
     audit_domain,
+    choose_pages,
+    find_copy,
+    parse_sitemap,
 )
 
-__version__ = "0.1.0"
-__all__ = ["AuditResult", "Endpoint", "EndpointResult", "ENDPOINTS", "audit_domain"]
+__version__ = "0.2.0"
+__all__ = [
+    "AuditResult",
+    "EndpointResult",
+    "PageResult",
+    "audit_domain",
+    "choose_pages",
+    "find_copy",
+    "parse_sitemap",
+]

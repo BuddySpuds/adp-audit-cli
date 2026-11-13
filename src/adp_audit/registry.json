@@ -1,0 +1,101 @@
+{
+  "protocol": "AI Discovery Protocol",
+  "version": "3.1",
+  "updated": "2026-11-13",
+  "canonical": "https://raw.githubusercontent.com/BuddySpuds/AI-Discovery-Protocol/main/registry/adp-registry.json",
+  "levels": [
+    {
+      "level": 1,
+      "id": "page_copies",
+      "name": "Page copies",
+      "status": "required",
+      "summary": "Every content page has a markdown copy that is linked from the page body."
+    },
+    {
+      "level": 2,
+      "id": "site_context",
+      "name": "Site context",
+      "status": "optional",
+      "summary": "Root files that describe the site as a whole."
+    },
+    {
+      "level": 3,
+      "id": "feeds_news",
+      "name": "Feeds and news",
+      "status": "optional",
+      "summary": "Machine-readable streams of new and changed content."
+    },
+    {
+      "level": 4,
+      "id": "agent_actions",
+      "name": "Agent actions and measurement",
+      "status": "optional",
+      "summary": "Manifests that let an agent call tools on the site, and a public statistics endpoint."
+    }
+  ],
+  "page_requirements": [
+    {
+      "id": "markdown_copy",
+      "level": 1,
+      "status": "required",
+      "description": "The page has a markdown copy at a stable URL. The copy answers 200 with a text/markdown or text/plain content type and carries the same content as the page."
+    },
+    {
+      "id": "body_link",
+      "level": 1,
+      "status": "required",
+      "description": "The visible body of the page contains an ordinary link to its markdown copy."
+    },
+    {
+      "id": "crawl_allowed",
+      "level": 1,
+      "status": "required",
+      "description": "robots.txt does not block AI crawlers from the page or from its markdown copy."
+    },
+    {
+      "id": "sitemap_listing",
+      "level": 1,
+      "status": "recommended",
+      "description": "The markdown copy is listed in a sitemap: the main one, or a dedicated sitemap for copies when the copies are marked noindex."
+    },
+    {
+      "id": "alternate_link",
+      "level": 1,
+      "status": "recommended",
+      "description": "The page head carries <link rel=\"alternate\" type=\"text/markdown\"> pointing at the copy."
+    }
+  ],
+  "endpoints": [
+    {"id": "robots_txt", "path": "/robots.txt", "level": 1, "category": "core", "status": "required", "description": "Crawler directives, with a Sitemap line"},
+    {"id": "sitemap", "path": "/sitemap.xml", "level": 1, "category": "core", "status": "required", "description": "Sitemap listing the content pages"},
+
+    {"id": "llms_txt", "path": "/llms.txt", "level": 2, "category": "context", "status": "optional", "description": "Plain-language overview of the site (llmstxt.org format)"},
+    {"id": "llms_full", "path": "/llms-full.txt", "level": 2, "category": "context", "status": "optional", "description": "Long-form context document"},
+    {"id": "llms_lite", "path": "/llms-lite.txt", "level": 2, "category": "context", "status": "optional", "description": "Condensed context document"},
+    {"id": "ai_discovery", "path": "/ai-discovery.json", "level": 2, "category": "context", "status": "optional", "description": "Meta-index of the site's machine-readable resources"},
+    {"id": "ai_discovery_md", "path": "/ai-discovery.md", "level": 2, "category": "context", "status": "optional", "description": "Markdown rendering of the meta-index"},
+    {"id": "knowledge_graph", "path": "/knowledge-graph.json", "level": 2, "category": "context", "status": "optional", "description": "Schema.org entity catalogue as JSON-LD"},
+    {"id": "well_known_ai", "path": "/.well-known/ai.json", "level": 2, "category": "context", "status": "optional", "description": "Well-known pointer to the meta-index"},
+    {"id": "opensearch", "path": "/opensearch.xml", "level": 2, "category": "context", "status": "optional", "description": "OpenSearch description of the site search"},
+
+    {"id": "feed_json", "path": "/feed.json", "level": 3, "category": "feeds", "status": "optional", "description": "JSON Feed of recent content"},
+    {"id": "rss", "path": "/rss.xml", "level": 3, "category": "feeds", "status": "optional", "description": "RSS feed of recent content"},
+    {"id": "updates_json", "path": "/updates.json", "level": 3, "category": "feeds", "status": "optional", "description": "Recent changes"},
+    {"id": "webhooks_discovery", "path": "/api/v1/webhooks/discovery", "aliases": ["/api/webhooks/discovery"], "level": 3, "category": "feeds", "status": "optional", "description": "Webhook registration for content updates"},
+    {"id": "news_llms_txt", "path": "/news/llms.txt", "level": 3, "category": "news", "status": "optional", "description": "Context document for the news section"},
+    {"id": "news_speakable", "path": "/news/speakable.json", "level": 3, "category": "news", "status": "optional", "description": "Short spoken-form summaries"},
+    {"id": "news_changelog", "path": "/news/changelog.json", "level": 3, "category": "news", "status": "optional", "description": "Dated list of additions and corrections"},
+    {"id": "news_archive", "path": "/news/archive.jsonl", "level": 3, "category": "news", "status": "optional", "description": "Full archive, one JSON object per line"},
+
+    {"id": "mcp_manifest", "path": "/mcp.json", "aliases": ["/.well-known/mcp.json"], "level": 4, "category": "agents", "status": "optional", "description": "Model Context Protocol server manifest"},
+    {"id": "agents_manifest", "path": "/.well-known/agents.json", "level": 4, "category": "agents", "status": "optional", "description": "Agent capability declaration"},
+    {"id": "adp_stats", "path": "/api/v1/adp/stats", "level": 4, "category": "measurement", "status": "optional", "description": "Public crawler-visit statistics"}
+  ],
+  "retired": [
+    {"path": "/ai-sitemap.xml", "since": "3.1", "replacement": "/sitemap.xml", "reason": "Crawlers read the standard sitemap; a second sitemap of the same pages is not needed."},
+    {"path": "/.well-known/security.txt", "since": "3.1", "replacement": null, "reason": "A good practice under RFC 9116, but not an AI discovery file. No longer counted."},
+    {"path": "/ai.txt", "since": "3.1", "replacement": null, "reason": "Never part of a published level; removed from the reference implementation in July 2026."},
+    {"path": "/ai-manifest.json", "since": "3.1", "replacement": null, "reason": "Never part of a published level; removed from the reference implementation in July 2026."},
+    {"path": "/.well-known/ai-plugin.json", "since": "3.1", "replacement": "/mcp.json", "reason": "Superseded by the MCP manifest."}
+  ]
+}
